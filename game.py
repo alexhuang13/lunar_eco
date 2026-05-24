@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Mac 推荐字体
-plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'PingFang HK', 'Heiti TC', 'STHeiti']
-plt.rcParams['axes.unicode_minus'] = False   # 正常显示负号
+# Linux 推荐字体
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False
 
 # ==========================================
 # 航天物理与生物工程参数 (真实对标版 & 无限扩展支持)
