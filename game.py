@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 解决 Windows 环境绘图中文方块 Bug
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
-plt.rcParams['axes.unicode_minus'] = False
+# Mac 推荐字体
+plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'PingFang HK', 'Heiti TC', 'STHeiti']
+plt.rcParams['axes.unicode_minus'] = False   # 正常显示负号
 
 # ==========================================
 # 航天物理与生物工程参数 (真实对标版 & 无限扩展支持)
