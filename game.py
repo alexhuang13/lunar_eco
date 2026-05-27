@@ -29,6 +29,19 @@ BIO_PARAMS = {
 }
 
 # ============================================================
+# 难度模式（v7 · 开局锁定的突发事件强度）
+# ============================================================
+DIFFICULTY_LEVELS = {
+    "easy":   {"name": "简单模式", "emoji": "🌱", "chance": 0.04,
+               "desc": "事件稀少 · 适合熟悉系统、欣赏闭环演进"},
+    "hard":   {"name": "困难模式", "emoji": "⚔️", "chance": 0.10,
+               "desc": "事件常态 · 需要应急储备与天赋协同"},
+    "hell":   {"name": "地狱模式", "emoji": "🔥", "chance": 0.20,
+               "desc": "事件频发 · 任何疏忽都可能导致生物圈崩溃"},
+}
+DEFAULT_DIFFICULTY = "hard"
+
+# ============================================================
 # 突发事件库（与 v5 相同）
 # ============================================================
 def _solar_particle_impact(s, ctx):
@@ -383,9 +396,237 @@ st.set_page_config(page_title="天外家园：v6 天赋·医疗·建造", layout
 
 
 # ==========================================
+# 界面套皮（v7 · 方案一 · CSS 注入，不改任何游戏逻辑）
+# ==========================================
+def inject_style():
+    st.markdown(
+        """
+        <style>
+        :root {
+          --bg-deep: #08161c;
+          --bg-1: #0a1820;
+          --bg-2: #0d2228;
+          --glass: rgba(12, 20, 28, 0.55);
+          --glass-strong: rgba(12, 20, 28, 0.78);
+          --glass-border: rgba(120, 200, 210, 0.18);
+          --glass-border-strong: rgba(120, 200, 210, 0.35);
+          --glow: rgba(60, 200, 200, 0.30);
+          --accent: #4fd1c5;
+          --accent-soft: rgba(79, 209, 197, 0.55);
+          --accent-warn: #f0b860;
+          --text-main: #e8f4f4;
+          --text-dim: rgba(200, 220, 220, 0.62);
+          --blur: 14px;
+        }
+
+        /* 全屏深色科幻背景（渐变 + 暗角） */
+        .stApp {
+          background:
+            radial-gradient(ellipse at 30% 20%, rgba(40, 90, 80, 0.35), transparent 50%),
+            radial-gradient(ellipse at 70% 80%, rgba(20, 80, 95, 0.30), transparent 55%),
+            linear-gradient(160deg, var(--bg-1), var(--bg-2) 40%, var(--bg-deep));
+          color: var(--text-main);
+        }
+
+        /* 标题与正文文字 */
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
+          color: var(--text-main);
+          text-shadow: 0 0 12px rgba(79, 209, 197, 0.20);
+        }
+        .stApp p, .stApp li, .stApp label, .stApp span { color: var(--text-main); }
+        .stApp [data-testid="stCaptionContainer"],
+        .stApp .stCaption, .stApp small { color: var(--text-dim) !important; }
+
+        /* 分隔线 --- → 青绿渐隐 */
+        .stApp hr {
+          border: none;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, var(--accent-soft) 50%, transparent);
+          opacity: 0.6;
+        }
+
+        /* 侧边栏 */
+        [data-testid="stSidebar"] {
+          background: rgba(8, 18, 24, 0.85);
+          backdrop-filter: blur(var(--blur));
+          -webkit-backdrop-filter: blur(var(--blur));
+          border-right: 1px solid var(--glass-border-strong);
+          box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+        }
+        [data-testid="stSidebar"] * { color: var(--text-main); }
+
+        /* metric → 毛玻璃胶囊 */
+        [data-testid="stMetric"] {
+          background: var(--glass);
+          backdrop-filter: blur(var(--blur));
+          -webkit-backdrop-filter: blur(var(--blur));
+          border: 1px solid var(--glass-border);
+          border-radius: 16px;
+          padding: 12px 16px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.30);
+          transition: border-color .25s, box-shadow .25s;
+        }
+        [data-testid="stMetric"]:hover {
+          border-color: var(--accent-soft);
+          box-shadow: 0 4px 28px var(--glow);
+        }
+        [data-testid="stMetricValue"] {
+          color: var(--text-main);
+          text-shadow: 0 0 8px rgba(79, 209, 197, 0.25);
+        }
+        [data-testid="stMetricLabel"] { color: var(--text-dim); }
+        [data-testid="stMetricDelta"] svg { fill: var(--accent); }
+
+        /* 按钮 */
+        .stButton > button, .stDownloadButton > button {
+          background: var(--glass);
+          border: 1px solid var(--glass-border);
+          border-radius: 14px;
+          color: var(--text-main);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          transition: all .25s ease;
+        }
+        .stButton > button:hover, .stDownloadButton > button:hover {
+          border-color: var(--accent);
+          color: var(--accent);
+          box-shadow: 0 4px 24px var(--glow);
+          transform: translateY(-1px);
+        }
+        .stButton > button[kind="primary"] {
+          background: linear-gradient(135deg, rgba(79, 209, 197, 0.25), rgba(40, 130, 130, 0.25));
+          border-color: var(--accent-soft);
+          color: var(--text-main);
+          box-shadow: 0 4px 18px var(--glow);
+        }
+        .stButton > button[kind="primary"]:hover {
+          background: linear-gradient(135deg, rgba(79, 209, 197, 0.40), rgba(40, 130, 130, 0.40));
+          box-shadow: 0 6px 28px var(--glow);
+        }
+
+        /* expander 卡片 */
+        [data-testid="stExpander"] {
+          background: var(--glass);
+          backdrop-filter: blur(var(--blur));
+          -webkit-backdrop-filter: blur(var(--blur));
+          border: 1px solid var(--glass-border);
+          border-radius: 14px;
+          overflow: hidden;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+        }
+        [data-testid="stExpander"] summary { color: var(--text-main); }
+        [data-testid="stExpander"] summary:hover { color: var(--accent); }
+
+        /* 数字 / 文本输入框 */
+        .stNumberInput input, .stTextInput input, .stTextArea textarea {
+          background: rgba(8, 18, 24, 0.55) !important;
+          color: var(--text-main) !important;
+          border: 1px solid var(--glass-border) !important;
+          border-radius: 8px !important;
+        }
+        .stNumberInput input:focus, .stTextInput input:focus, .stTextArea textarea:focus {
+          border-color: var(--accent) !important;
+          box-shadow: 0 0 0 1px var(--accent-soft) !important;
+        }
+        .stNumberInput button {
+          background: rgba(8, 18, 24, 0.55) !important;
+          border-color: var(--glass-border) !important;
+          color: var(--accent) !important;
+        }
+
+        /* 下拉选择 */
+        .stSelectbox [data-baseweb="select"] > div {
+          background: rgba(8, 18, 24, 0.55) !important;
+          border: 1px solid var(--glass-border) !important;
+          border-radius: 8px !important;
+          color: var(--text-main) !important;
+        }
+
+        /* 滑块 */
+        .stSlider [data-baseweb="slider"] [role="slider"] {
+          background: var(--accent) !important;
+          box-shadow: 0 0 12px var(--glow) !important;
+        }
+
+        /* 进度条 */
+        .stProgress > div > div > div {
+          background-color: rgba(8, 18, 24, 0.55) !important;
+          border: 1px solid var(--glass-border) !important;
+          border-radius: 8px !important;
+        }
+        .stProgress > div > div > div > div {
+          background-image: linear-gradient(90deg, var(--accent), #2e9d92) !important;
+          box-shadow: 0 0 12px var(--glow);
+        }
+
+        /* 表格 */
+        .stTable, [data-testid="stTable"], [data-testid="stDataFrame"] {
+          background: var(--glass) !important;
+          backdrop-filter: blur(var(--blur));
+          -webkit-backdrop-filter: blur(var(--blur));
+          border: 1px solid var(--glass-border) !important;
+          border-radius: 12px !important;
+          overflow: hidden;
+        }
+        .stTable table, [data-testid="stTable"] table, [data-testid="stDataFrame"] table {
+          background: transparent !important;
+          color: var(--text-main) !important;
+        }
+        .stTable thead th, [data-testid="stTable"] thead th, [data-testid="stDataFrame"] thead th {
+          background: rgba(79, 209, 197, 0.10) !important;
+          color: var(--accent) !important;
+          border-bottom: 1px solid var(--accent-soft) !important;
+          font-weight: 600;
+        }
+        .stTable tbody tr:nth-child(even),
+        [data-testid="stTable"] tbody tr:nth-child(even),
+        [data-testid="stDataFrame"] tbody tr:nth-child(even) {
+          background: rgba(255, 255, 255, 0.02) !important;
+        }
+        .stTable tbody td, [data-testid="stTable"] tbody td, [data-testid="stDataFrame"] tbody td {
+          color: var(--text-main) !important;
+          border-color: rgba(120, 200, 210, 0.08) !important;
+        }
+
+        /* info / success / warning / error 提示框 */
+        [data-testid="stAlert"] {
+          background: var(--glass) !important;
+          backdrop-filter: blur(var(--blur));
+          -webkit-backdrop-filter: blur(var(--blur));
+          border: 1px solid var(--glass-border);
+          border-left: 3px solid var(--accent);
+          border-radius: 10px;
+          color: var(--text-main);
+        }
+        [data-testid="stAlert"] * { color: var(--text-main) !important; }
+
+        /* radio / checkbox */
+        .stRadio label, .stCheckbox label { color: var(--text-main) !important; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(8, 18, 24, 0.4); }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(79, 209, 197, 0.25);
+          border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(79, 209, 197, 0.45); }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+inject_style()
+
+
+# ==========================================
 # 初始化
 # ==========================================
-def _initialize_game(o2_tanks, crew_size, hab, plant, compost, minister_key="annie"):
+def _initialize_game(o2_tanks, crew_size, hab, plant, compost,
+                     minister_key="annie", difficulty=DEFAULT_DIFFICULTY):
+    if difficulty not in DIFFICULTY_LEVELS:
+        difficulty = DEFAULT_DIFFICULTY
     st.session_state.day = 0
     st.session_state.is_alive = True
     st.session_state.death_reason = ""
@@ -396,10 +637,13 @@ def _initialize_game(o2_tanks, crew_size, hab, plant, compost, minister_key="ann
     st.session_state.last_greenhouse = 0
     st.session_state.init_tanks = o2_tanks
     st.session_state.locked_crew_size = crew_size
+    st.session_state.difficulty = difficulty
+    st.session_state.event_chance = DIFFICULTY_LEVELS[difficulty]["chance"]
     st.session_state.locked_initial = {
         "tanks": o2_tanks, "crew": crew_size,
         "hab": hab, "plant": plant, "compost": compost,
         "minister": minister_key,
+        "difficulty": difficulty,
     }
     st.session_state.crew_list = [_make_minister_crew(minister_key)]
     used_names = {st.session_state.crew_list[0]["name"]}
@@ -479,9 +723,33 @@ if not st.session_state.game_started:
     st.info(f"当前选择：**{MINISTERS[_minister_choice]['name']}** — {MINISTERS[_minister_choice]['desc']}")
     st.session_state._init_minister = _minister_choice
 
+    st.markdown("---")
+    st.subheader("⚠️ 选择突发事件强度（难度模式）")
+    st.caption("难度一旦确认将永久锁定，整局沿用此事件概率。")
+    _diff_keys = list(DIFFICULTY_LEVELS.keys())
+    _diff_choice = st.session_state.get("_init_difficulty", DEFAULT_DIFFICULTY)
+    if _diff_choice not in DIFFICULTY_LEVELS:
+        _diff_choice = DEFAULT_DIFFICULTY
+    _dcols = st.columns(len(_diff_keys))
+    for _di, _dk in enumerate(_diff_keys):
+        _dspec = DIFFICULTY_LEVELS[_dk]
+        with _dcols[_di]:
+            _label = f"{_dspec['emoji']} {_dspec['name']}"
+            if st.button(_label, use_container_width=True, key=f"diff_btn_{_dk}"):
+                st.session_state._init_difficulty = _dk
+                _diff_choice = _dk
+            st.caption(f"事件概率 {_dspec['chance']*100:.0f}% / 天")
+            st.caption(_dspec["desc"])
+    _dspec_sel = DIFFICULTY_LEVELS[_diff_choice]
+    st.info(
+        f"当前难度：**{_dspec_sel['emoji']} {_dspec_sel['name']}** "
+        f"— 每日触发概率 {_dspec_sel['chance']*100:.0f}% · {_dspec_sel['desc']}"
+    )
+    st.session_state._init_difficulty = _diff_choice
+
     if st.button("🚀 确认配置，开始任务", type="primary", use_container_width=True):
         _initialize_game(init_tanks_in, init_crew_in, init_hab_in, init_plant_in, init_compost_in,
-                         minister_key=_minister_choice)
+                         minister_key=_minister_choice, difficulty=_diff_choice)
         st.rerun()
     st.stop()
 
@@ -492,6 +760,8 @@ for _k, _v in [
     ("last_greenhouse", 0),
     ("build_queue", []),
     ("locked_crew_size", len(st.session_state.get("crew_list", []))),
+    ("difficulty", DEFAULT_DIFFICULTY),
+    ("event_chance", DIFFICULTY_LEVELS[DEFAULT_DIFFICULTY]["chance"]),
     ("locked_initial", {
         "tanks": st.session_state.get("init_tanks", 10),
         "crew": len(st.session_state.get("crew_list", [])),
@@ -499,10 +769,12 @@ for _k, _v in [
         "plant": st.session_state.get("last_plant", 1),
         "compost": st.session_state.get("last_compost", 1),
         "minister": "annie",
+        "difficulty": DEFAULT_DIFFICULTY,
     }),
 ]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
+st.session_state.locked_initial.setdefault("difficulty", st.session_state.get("difficulty", DEFAULT_DIFFICULTY))
 
 for _k, _v in [
     ("Power_Battery_kWh", BATTERY_CAP_DEFAULT),
@@ -1197,6 +1469,20 @@ with st.sidebar:
 st.header("🌙 天外家园 · v6")
 st.caption("天赋系统 · 医疗/受伤 · 排队建造 · 药物生产链")
 
+# ---------- 页面最上方：一键推进时间 ----------
+_run_c1, _run_c2 = st.columns([1, 2])
+with _run_c1:
+    if st.button("⏳ 闭环演进 (时间流逝)", type="primary",
+                 use_container_width=True, key="evolve_top",
+                 disabled=not st.session_state.is_alive):
+        st.session_state._do_step = True
+with _run_c2:
+    _step_top = st.slider("推演时间跨度 (天 · 可跳跃加速)", 1, 30,
+                          int(st.session_state.get("_step_n", 5)),
+                          key="step_slider_top")
+    st.session_state._step_n = _step_top
+st.markdown("---")
+
 def _mood_health_tier(v):
     if v > 70:  return "✅"
     if v >= 40: return "⚠️"
@@ -1264,11 +1550,14 @@ with st.sidebar:
     st.header("🔒 任务约束 (开局已锁定)")
     _lk = st.session_state.locked_initial
     _min_name = MINISTERS.get(_lk.get("minister", "annie"), MINISTERS["annie"])["name"]
+    _dk = _lk.get("difficulty", DEFAULT_DIFFICULTY)
+    _dspec_lk = DIFFICULTY_LEVELS.get(_dk, DIFFICULTY_LEVELS[DEFAULT_DIFFICULTY])
     st.markdown(
         f"- 着陆携带 **{_lk['tanks']}** 瓶储氧罐\n"
         f"- 初始乘组 **{_lk['crew']}** 人\n"
         f"- 初始舱室 居 **{_lk['hab']}** / 植 **{_lk['plant']}** / 堆 **{_lk['compost']}**\n"
-        f"- 部长：**{_min_name}**"
+        f"- 部长：**{_min_name}**\n"
+        f"- 难度：**{_dspec_lk['emoji']} {_dspec_lk['name']}**（事件 {_dspec_lk['chance']*100:.0f}%/天）"
     )
 
     st.markdown("---")
@@ -1417,15 +1706,10 @@ with st.sidebar:
                 proj["crew"] = 0
             st.markdown("")
 
-    st.markdown("---")
-    st.header("⚠️ 突发事件强度")
-    event_level = st.select_slider("事件发生频率", options=["关闭", "低", "中", "高"], value="低")
-    event_chance = {"关闭": 0.0, "低": 0.04, "中": 0.10, "高": 0.20}[event_level]
-
-    step = st.slider("推演时间跨度 (可跳跃加速)", 1, 30, 5)
-    if st.button("⏳ 闭环演进 (时间流逝)", type="primary", use_container_width=True):
-        step_system(alg_ww, alg_fert, light_h, incinerator_rate, solar_panel_m2,
-                    step, event_chance)
+if st.session_state.pop("_do_step", False):
+    step_system(alg_ww, alg_fert, light_h, incinerator_rate, solar_panel_m2,
+                int(st.session_state.get("_step_n", 5)),
+                st.session_state.event_chance)
 
 if not st.session_state.is_alive:
     st.error(f"💀 生物圈崩溃！原委：{st.session_state.death_reason}")
